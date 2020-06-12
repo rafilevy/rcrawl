@@ -1,6 +1,6 @@
 [package]
 name = "rcrawl"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Rafi Levy <rafi.levy@sky.com>"]
 edition = "2018"
 description = "A command line program which recursively searches for a named file or directory"
