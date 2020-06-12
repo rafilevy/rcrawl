@@ -8,9 +8,10 @@ const DEFAULT_MAX_DEPTH: u8 = 50;
 const DEFAULT_MAX_ITEMS: u8 = 10;
 
 pub struct Config {
+    full: bool,
     max_items: u8,
     max_depth: u8,
-    query: String
+    query: String,
 }
 
 impl Config {
@@ -26,7 +27,8 @@ impl Config {
                 None => DEFAULT_MAX_ITEMS
             }
         };
-        Config { max_depth, query, max_items }
+        let full = matches.is_present("full");
+        Config { max_depth, query, max_items, full }
     }
 }
 
@@ -73,8 +75,21 @@ pub fn run(cfg: Config) -> std::io::Result<()> {
     if results.is_empty() {
         eprintln!("rcrawl: No files or directory {} was found", cfg.query)
     } else {
+        let cwd = env::current_dir().unwrap();
         for result in results {
-            println!("{}", result.to_str().unwrap().replace(" ", "\\ "));
+            let path = if cfg.full { result }
+            else {
+                let mut cmp_path = PathBuf::new();
+                let mut path = PathBuf::new();
+                for part in result.iter() {
+                    cmp_path.push(part);
+                    if cmp_path.gt(&cwd) {
+                        path.push(part);
+                    }
+                }
+                path
+            };
+            println!("{}", path.to_str().unwrap().replace(" ", "\\ "))
         }
     }
     Ok(())
