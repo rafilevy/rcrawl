@@ -74,7 +74,7 @@ pub fn run(cfg: Config) -> std::io::Result<()> {
         eprintln!("rcrawl: No files or directory {} was found", cfg.query)
     } else {
         for result in results {
-            println!("{:?}", result);
+            println!("{}", result.to_str().unwrap());
         }
     }
     Ok(())
