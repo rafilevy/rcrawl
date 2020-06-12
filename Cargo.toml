@@ -1,8 +1,14 @@
 [package]
 name = "rcrawl"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Rafi Levy <rafi.levy@sky.com>"]
 edition = "2018"
+description = "A command line program which recursively searches for a named file or directory"
+readme = "README.md"
+repository = "https://github.com/rafilevy/rcrawl"
+license = "GPL-3.0-or-later"
+keywords = ["command-line", "search", "file", "directory"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
