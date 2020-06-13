@@ -52,13 +52,14 @@ fn find_dir(name: &str, max_depth: u8, max_items: u8) -> std::io::Result<Vec<Pat
     let mut current: DirNode;
     while !queue.is_empty() && found < max_items {
         current = queue.pop_front().unwrap();
-        if current.path.file_name().unwrap().eq(name) {
-            results.push(current.path.to_path_buf());
-            found += 1;
-        }
         if current.depth < max_depth && current.path.is_dir() {
             for entry in std::fs::read_dir(current.path.to_path_buf())? {
                 let entry : fs::DirEntry = entry?;
+                if entry.path().file_name().unwrap().eq(name) {
+                    results.push(entry.path().to_path_buf());
+                    found += 1;
+                    if found == max_items { break; }
+                }
                 queue.push_front(DirNode {
                     path: Box::new(entry.path()),
                     depth: current.depth + 1,
