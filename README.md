@@ -9,6 +9,7 @@ USAGE:
     rcrawl [FLAGS] [OPTIONS] <dirname>
 
 FLAGS:
+    -f, --full       A flag indicating that full rather than relative paths should be returned
     -h, --help       Prints help information
     -s, --single     A flag indicating only the first found item should be output (equivalent to --max_items 1)
     -V, --version    Prints version information
