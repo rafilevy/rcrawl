@@ -19,5 +19,5 @@ OPTIONS:
     -i, --max_items <max_items>    The maximum number of results to return
 
 ARGS:
-    <dirname>    The name of the directory to change to
+    <dirname>    The name of the file or directory to search for
 ```
