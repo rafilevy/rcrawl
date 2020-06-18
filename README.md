@@ -1,6 +1,7 @@
 # rcrawl
 
 A command line program which recursively searches for a named file or directory - built with rust
+(Similar to the UNIX find command)
 
 ```_
 Recursively searches for a given file or directory and prints its full path to stdout
