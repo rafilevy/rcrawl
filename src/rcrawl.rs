@@ -2,12 +2,12 @@ use clap::{ArgMatches};
 use std::collections::{VecDeque};
 use std::path::{PathBuf};
 
-const DEFAULT_MAX_DEPTH: u8 = 50;
-const DEFAULT_MAX_ITEMS: u8 = 10;
+const DEFAULT_MAX_DEPTH: u8 = 255;
+const DEFAULT_MAX_ITEMS: u32 = 0;
 
 pub struct Config {
     relative: bool,
-    max_items: u8,
+    max_items: u32,
     max_depth: u8,
     match_expr: String,
 }
@@ -19,7 +19,7 @@ impl Config {
             None => DEFAULT_MAX_DEPTH
         };
         let match_expr: String = matches.value_of("filename").unwrap_or_default().to_owned();
-        let max_items: u8 = if matches.is_present("single") { 1 } else {
+        let max_items: u32 = if matches.is_present("single") { 1 } else {
             match matches.value_of("max_items") {
                 Some(i) => String::from(i).parse().unwrap(),
                 None => DEFAULT_MAX_ITEMS
@@ -88,14 +88,14 @@ impl Iterator for FileSearch<'_> {
 pub fn run(cfg: Config) -> std::io::Result<()> {
     let root_dir = std::env::current_dir()?;
     let root_dir_string = root_dir.to_str().unwrap();
-    let mut count: u8 = 0;
+    let mut count: u32 = 0;
     for result in FileSearch::new(&cfg.match_expr, std::env::current_dir()?, cfg.max_depth)? {
-        if count == cfg.max_items { break; }
         let path = result;
         let print_str = if cfg.relative { path.to_str().unwrap().replace(root_dir_string, "")}
             else { path.to_str().unwrap().to_owned() };
         println!("{}", print_str);
         count += 1;
+        if count == cfg.max_items { break; }
     }
     Ok(())
 }

@@ -11,9 +11,16 @@ fn u8_validator(s : String) -> Result<(), String> {
     }
 }
 
+fn u32_validator(s : String) -> Result<(), String> {
+    match s.parse::<u32>() {
+        Ok(_) => Ok(()),
+        Err(_) => Err(String::from("The value must be a positive integer"))
+    }
+}
+
 fn main() {
     let cl_matches = App::new("rcrawl")
-        .version("1.1.2")
+        .version("1.1.4")
         .author("Rafi Levy. <rafilevy.co.uk>")
         .about("Recursively searches for a given file or directory and prints its full path to stdout")
         .arg(Arg::with_name("single")
@@ -38,7 +45,7 @@ fn main() {
             .long("max_items")
             .takes_value(true)
             .help("The maximum number of results to return")
-            .validator(u8_validator)
+            .validator(u32_validator)
         )
         .arg(Arg::with_name("filename")
             .help("The name of the file/directory to search for")
