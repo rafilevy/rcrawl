@@ -54,7 +54,6 @@ impl<'a> FileSearch<'a> {
 }
 
 impl Iterator for FileSearch<'_> {
-
     type Item = PathBuf;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -88,23 +87,14 @@ impl Iterator for FileSearch<'_> {
 
 pub fn run(cfg: Config) -> std::io::Result<()> {
     let root_dir = std::env::current_dir()?;
+    let root_dir_string = root_dir.to_str().unwrap();
     let mut count: u8 = 0;
-    for result in FileSearch::new(&cfg.match_expr, root_dir, cfg.max_depth)? {
+    for result in FileSearch::new(&cfg.match_expr, std::env::current_dir()?, cfg.max_depth)? {
         if count == cfg.max_items { break; }
         let path = result;
-        // let path = if !cfg.relative { result }
-        // else {
-        //     let mut cmp_path = PathBuf::new();
-        //     let mut path = PathBuf::new();
-        //     for part in result.iter() {
-        //         cmp_path.push(part);
-        //         if cmp_path.gt(&root_dir) {
-        //             path.push(part);
-        //         }
-        //     }
-        //     path
-        // };
-        println!("{}", path.to_str().unwrap().replace(" ", "\\ "));
+        let print_str = if cfg.relative { path.to_str().unwrap().replace(root_dir_string, "")}
+            else { path.to_str().unwrap().to_owned() };
+        println!("{}", print_str);
         count += 1;
     }
     Ok(())
