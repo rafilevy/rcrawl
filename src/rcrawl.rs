@@ -60,23 +60,24 @@ impl Iterator for FileSearch<'_> {
         let mut current: DirNode;
         while !self.queue.is_empty() {
             current = self.queue.pop_front().unwrap();
-            if current.depth < self.max_depth && current.path.is_dir() {
-                let dir_contents = std::fs::read_dir(&current.path);
-                match dir_contents {
-                    Ok(read_dir) => {
-                        for entry in read_dir {
-                            let entry = entry.unwrap();
-                            if entry.path().file_name().unwrap() == self.match_expr {
-                                return Some(entry.path());
-                            }
-                            self.queue.push_front(DirNode {
-                                path: entry.path(),
-                                depth: current.depth + 1,
-                            });
+            if current.depth > self.max_depth { break; }
+            let dir_contents = std::fs::read_dir(&current.path);
+            match dir_contents {
+                Ok(read_dir) => {
+                    for entry in read_dir {
+                        let entry = entry.unwrap();
+                        self.queue.push_back(DirNode {
+                            path: entry.path(),
+                            depth: current.depth + 1,
+                        });
+                        if entry.path().file_name().unwrap() == self.match_expr {
+                            return Some(entry.path());
                         }
-                    },
-                    Err(_) => {
-                        eprintln!("rcrawl: Permission denied for {:?}", current.path)
+                    }
+                },
+                Err(e) => {
+                    if e.kind() == std::io::ErrorKind::PermissionDenied {
+                        eprintln!("Permission denied for: {:?}", current.path)
                     }
                 }
             }

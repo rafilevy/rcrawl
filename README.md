@@ -1,4 +1,4 @@
-# rcrawl 1.1.4
+# rcrawl 1.1.5
 
 A command line program which recursively searches for a named file or directory - built with rust
 (Similar to the UNIX find command)
