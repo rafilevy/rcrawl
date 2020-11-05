@@ -1,4 +1,4 @@
-# rcrawl 1.1.5
+# rcrawl 1.1.6
 
 A command line program which recursively searches for a named file or directory - built with rust
 (Similar to the UNIX find command)
@@ -18,6 +18,7 @@ FLAGS:
 OPTIONS:
     -d, --max_depth <max_depth>    The maximum depth to recursively search to
     -i, --max_items <max_items>    The maximum number of results to return
+    -t, --threads <threads>        The number of threads to use to search for 
 
 ARGS:
     <filename>    The name of the file/directory to search for
