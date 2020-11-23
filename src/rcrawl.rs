@@ -6,7 +6,7 @@ use std::io::Result;
 use std::thread;
 use std::sync::{Arc, Mutex};
 
-use crate::utils::{print_path, print_path_relative};
+use crate::utils::{PathPrinter};
 
 const DEFAULT_MAX_DEPTH: u8 = 255;
 const DEFAULT_MAX_ITEMS: u32 = 0;
@@ -68,6 +68,8 @@ impl<'a> FileSearch<'a> {
 
 impl FileSearch<'_> {
     fn search(&mut self) {
+        let path_printer = PathPrinter::new(self.relative).unwrap();
+
         let mut current: DirNode;
         while !self.queue.is_empty() {
             current = self.queue.pop_front().unwrap();
@@ -82,9 +84,7 @@ impl FileSearch<'_> {
                             depth: current.depth + 1,
                         });
                         if entry.path().file_name().unwrap() == self.match_expr {
-                            if self.relative {
-                                print_path_relative(entry.path()).unwrap();
-                            } else { print_path(entry.path()) }
+                            path_printer.print_path(entry.path());
                         }
                     }
                 },
@@ -120,11 +120,13 @@ impl<'a> ConcurrentFileSearch<'a> {
 
 impl ConcurrentFileSearch<'_> {
     fn search(&mut self) {
+        let path_printer = Arc::new(PathPrinter::new(self.relative).unwrap());
+
         let mut handles: Vec<std::thread::JoinHandle<()>> = vec!();
         for _ in 0..self.num_threads {
             let search_queue = Arc::clone(&self.search_queue);
+            let path_printer = Arc::clone(&path_printer);
             let match_expr = self.match_expr.to_owned();
-            let relative = self.relative;
             let max_depth = self.max_depth;
             let handle = thread::spawn(move || {
                 while !(*search_queue.lock().unwrap()).is_empty() {
@@ -141,14 +143,14 @@ impl ConcurrentFileSearch<'_> {
                         Ok(read_dir) => {
                             for entry in read_dir {
                                 let entry = entry.unwrap();
-                                (*search_queue.lock().unwrap()).push_back(DirNode {
-                                    path: entry.path(),
-                                    depth: current.depth + 1,
-                                });
-                                if entry.path().file_name().unwrap() == &match_expr.clone()[..] {
-                                    if relative {
-                                        print_path_relative(entry.path()).unwrap();
-                                    } else { print_path(entry.path()) }
+                                if !entry.file_name().as_os_str().to_str().unwrap().starts_with(".") {
+                                    (*search_queue.lock().unwrap()).push_back(DirNode {
+                                        path: entry.path(),
+                                        depth: current.depth + 1,
+                                    });
+                                }
+                                if entry.path().file_name().unwrap() == &match_expr[..] {
+                                    path_printer.print_path(entry.path());
                                 }
                             }
                         },

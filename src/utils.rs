@@ -1,14 +1,21 @@
 use std::path::{PathBuf};
 
-pub fn print_path(path: PathBuf) {
-    let print_str = path.to_str().unwrap().to_owned();
-    println!("{}", print_str);
+pub struct PathPrinter {
+    relative_length: usize
 }
 
-pub fn print_path_relative(path: PathBuf) -> Result<(), std::io::Error> {
-    let root_dir = std::env::current_dir()?;
-    let root_dir_string = root_dir.to_str().unwrap();
-    let print_str = path.to_str().unwrap().replace(root_dir_string, "");
-    println!("{}", print_str);
-    Ok(())
+impl PathPrinter {
+    pub fn new(relative: bool) -> Result<PathPrinter, std::io::Error> {
+        if relative {
+            let root_dir = std::env::current_dir()?;
+            let relative_length = root_dir.to_str().unwrap_or_default().len();
+            return Ok( PathPrinter {relative_length} );
+        }
+        Ok(PathPrinter {relative_length:0})
+    }
+
+    pub fn print_path(&self, path: PathBuf) {
+        let print_str = &path.to_str().unwrap()[self.relative_length..];
+        println!("{}", print_str);
+    }
 }

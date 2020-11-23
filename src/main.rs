@@ -21,7 +21,7 @@ fn u32_validator(s : String) -> Result<(), String> {
 
 fn main() {
     let cl_matches = App::new("rcrawl")
-        .version("1.1.6")
+        .version("1.1.7")
         .author("Rafi Levy. <rafilevy.co.uk>")
         .about("Recursively searches for a given file or directory and prints its full path to stdout")
         .arg(Arg::with_name("single")
