@@ -14,9 +14,13 @@ const DEFAULT_NUM_THREADS: u8 = 16;
 
 pub struct Config {
     relative: bool,
+
     max_items: u32,
     max_depth: u8,
+
     match_expr: String,
+    regex: bool,
+
     num_threads: u8
 }
 
@@ -38,7 +42,8 @@ impl Config {
             Some(i) => String::from(i).parse().unwrap(),
             None => DEFAULT_NUM_THREADS
         };
-        Config { max_depth, match_expr, max_items, relative, num_threads }
+        let regex: bool = matches.is_present("regex");
+        Config { max_depth, match_expr, regex, max_items, relative, num_threads }
     }
 }
 
