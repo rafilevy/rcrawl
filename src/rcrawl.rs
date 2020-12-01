@@ -2,9 +2,9 @@ use clap::{ArgMatches};
 use std::collections::{VecDeque};
 use std::path::{PathBuf};
 use std::io::Result;
-
 use std::thread;
 use std::sync::{Arc, Mutex};
+use regex::Regex;
 
 use crate::utils::{PathPrinter};
 
@@ -52,24 +52,30 @@ struct DirNode {
     depth: u8
 }
 
+enum MatchExpr {
+    String(String),
+    Regex(regex::Regex)
+}
+
 struct ConcurrentFileSearch<'a> {
     match_expr: &'a str,
     max_depth: u8,
     max_items: u32,
     relative: bool,
     num_threads: u8,
+    regex: bool,
 
     search_queue: Arc<Mutex<VecDeque<DirNode>>>,
 }
 
 impl<'a> ConcurrentFileSearch<'a> {
-    fn new(match_expr: &'a str, root_dir: PathBuf, max_depth: u8, max_items: u32, relative: bool, num_threads: u8) -> Result<ConcurrentFileSearch<'a>> {
+    fn new(match_expr: &'a str, root_dir: PathBuf, max_depth: u8, max_items: u32, relative: bool, num_threads: u8, regex: bool) -> Result<ConcurrentFileSearch<'a>> {
         let search_queue = Arc::new(Mutex::new(VecDeque::new()));
         search_queue.lock().unwrap().push_front(DirNode {
             depth: 0,
             path: root_dir
         });
-        Ok(ConcurrentFileSearch {match_expr, max_depth, max_items, relative, search_queue, num_threads})
+        Ok(ConcurrentFileSearch {match_expr, regex, max_depth, max_items, relative, search_queue, num_threads})
     }
 }
 
@@ -78,11 +84,19 @@ impl ConcurrentFileSearch<'_> {
         let path_printer = Arc::new(PathPrinter::new(self.relative).unwrap());
         let mut handles: Vec<std::thread::JoinHandle<()>> = vec!();
         let num_items : Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
+        let match_expr = Arc::new(if self.regex {
+            let mut match_string = String::from("^");
+            match_string.push_str(self.match_expr);
+            match_string.push_str("$");
+            MatchExpr::Regex(Regex::new(&match_string).unwrap())
+        } else {
+            MatchExpr::String(self.match_expr.to_owned())
+        });
         for _ in 0..self.num_threads {
             let search_queue = Arc::clone(&self.search_queue);
             let path_printer = Arc::clone(&path_printer);
             let num_items = Arc::clone(&num_items);
-            let match_expr = self.match_expr.to_owned();
+            let match_expr = Arc::clone(&match_expr);
             let max_depth = self.max_depth;
             let max_items = self.max_items;
             let handle = thread::spawn(move || {
@@ -107,7 +121,11 @@ impl ConcurrentFileSearch<'_> {
                                     });
                                 }
                                 let mut num_items = num_items.lock().unwrap();
-                                if entry.path().file_name().unwrap() == &match_expr[..] && *num_items < max_items {
+                                let expr_match = match &*match_expr {
+                                    MatchExpr::String(s) => s[..] == entry.file_name(),
+                                    MatchExpr::Regex(r) => r.is_match(entry.file_name().to_str().unwrap())
+                                };
+                                if *num_items < max_items && expr_match {
                                     path_printer.print_path(entry.path());
                                     *num_items += 1;
                                 }
@@ -131,6 +149,6 @@ impl ConcurrentFileSearch<'_> {
 
 pub fn run(cfg: Config) -> std::io::Result<()> {
     let root_dir = std::env::current_dir()?;
-    ConcurrentFileSearch::new(&cfg.match_expr, root_dir, cfg.max_depth, cfg.max_items, cfg.relative, cfg.num_threads)?.search();
+    ConcurrentFileSearch::new(&cfg.match_expr, root_dir, cfg.max_depth, cfg.max_items, cfg.relative, cfg.num_threads, cfg.regex)?.search();
     Ok(())
 }
