@@ -47,57 +47,6 @@ struct DirNode {
     depth: u8
 }
 
-struct FileSearch<'a> {
-    match_expr: &'a str,
-    max_depth: u8,
-    relative: bool,
-
-    queue: VecDeque<DirNode>
-}
-
-impl<'a> FileSearch<'a> {
-    fn new(match_expr: &'a str, root_dir: PathBuf, max_depth: u8, relative: bool) -> Result<FileSearch<'a>> {
-        let mut queue = VecDeque::new();
-        queue.push_front(DirNode {
-            path: root_dir,
-            depth: 0
-        });
-        Ok(FileSearch { match_expr, max_depth, queue, relative })
-    }
-}
-
-impl FileSearch<'_> {
-    fn search(&mut self) {
-        let path_printer = PathPrinter::new(self.relative).unwrap();
-
-        let mut current: DirNode;
-        while !self.queue.is_empty() {
-            current = self.queue.pop_front().unwrap();
-            if current.depth > self.max_depth { break; }
-            let dir_contents = std::fs::read_dir(&current.path);
-            match dir_contents {
-                Ok(read_dir) => {
-                    for entry in read_dir {
-                        let entry = entry.unwrap();
-                        self.queue.push_back(DirNode {
-                            path: entry.path(),
-                            depth: current.depth + 1,
-                        });
-                        if entry.path().file_name().unwrap() == self.match_expr {
-                            path_printer.print_path(entry.path());
-                        }
-                    }
-                },
-                Err(e) => {
-                    if e.kind() == std::io::ErrorKind::PermissionDenied {
-                        eprintln!("Permission denied for: {:?}", current.path)
-                    }
-                }
-            }
-        };
-    }
-}
-
 struct ConcurrentFileSearch<'a> {
     match_expr: &'a str,
     max_depth: u8,
@@ -177,7 +126,6 @@ impl ConcurrentFileSearch<'_> {
 
 pub fn run(cfg: Config) -> std::io::Result<()> {
     let root_dir = std::env::current_dir()?;
-    if cfg.num_threads == 1 { FileSearch::new(&cfg.match_expr, root_dir, cfg.max_depth, cfg.relative)?.search(); } 
-    else { ConcurrentFileSearch::new(&cfg.match_expr, root_dir, cfg.max_depth, cfg.max_items, cfg.relative, cfg.num_threads)?.search(); }
+    ConcurrentFileSearch::new(&cfg.match_expr, root_dir, cfg.max_depth, cfg.max_items, cfg.relative, cfg.num_threads)?.search();
     Ok(())
 }
